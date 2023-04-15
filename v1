@@ -1,0 +1,295 @@
+# This game is best viewed at 75% full screen
+
+import pygame
+from pygame import mixer
+from pygame.locals import K_ESCAPE, KEYDOWN, QUIT, MOUSEBUTTONDOWN
+import random
+
+pygame.init()
+mixer.init()
+
+WIDTH = 640
+HEIGHT = 480
+SIZE = (WIDTH, HEIGHT)
+
+screen = pygame.display.set_mode(SIZE)
+clock = pygame.time.Clock()
+
+# Sounds - Samuel (music doesn't work because I'm pretty sure replit has a different function)
+coin_sound = pygame.mixer.Sound("coin.mp3")
+goomba_sound = pygame.mixer.Sound("goomba.mp3")
+mushroom_sound = pygame.mixer.Sound("mushroom.mp3")
+themesong_sound = pygame.mixer.Sound("theme song.mp3")
+win_sound = pygame.mixer.Sound("win.mp3")
+
+themesong_sound.play(-1)
+
+pygame.mixer.music.set_volume(0.5)
+
+# ---------------------------
+# Initialize global variables — Samuel and Angela
+shift_world = 0
+mushroom_x = 308 
+mushroom_y = 81
+goomba_x = 700
+goomba_y = 280
+score = 0
+mushroom_speed = 1
+goomba_speed = 1
+speed = 2
+move_left = False
+move_right = False
+player_x = 50
+player_y = 280
+y_gravity = 1
+jump_height = 17
+
+y_velocity = jump_height
+jumping = False
+
+
+mushroom_activated = False
+coin1_activated = False
+coin2_activated = False
+coin3_activated = False
+collide_coin1 = False
+collide_coin2 = False
+collide_coin3 = False
+collide_mushroom = False
+player_killed = False
+goomba_killed = False
+mario_grow = False
+
+# ---------------------------
+
+
+# import images — Angela
+ground = pygame.image.load("mario_ground.png")
+flagpole = pygame.image.load("flagpole.png")
+platform = pygame.image.load("platform.png")
+mystery_not_hit = pygame.image.load("mystery_not_hit.png")
+mystery_hit = pygame.image.load("mystery_hit.png")
+coin1 = pygame.image.load("coin.png")
+coin2 = pygame.image.load("coin.png")
+coin3 = pygame.image.load("coin.png")
+cloud_images = [
+    pygame.image.load("cloud1.png"),
+    pygame.image.load("cloud2.png"),
+    pygame.image.load("cloud3.png")
+]
+mushroom = pygame.image.load("mushroom.png")
+mario = pygame.image.load("mario.png")
+goomba = pygame.image.load("goomba.png")
+
+# cloud positions — Angela
+y_positions = []
+clouds = []
+for i in range(20):
+    y_position = random.randint(0, 40)
+    y_positions.append(y_position)
+    cloud_image = random.choice(cloud_images)
+    clouds.append(cloud_image)
+
+while True:
+    # Event handling — Samuel
+    for event in pygame.event.get():
+        if event.type == KEYDOWN:
+            if event.key == K_ESCAPE:
+                pygame.quit()
+                exit()
+            elif event.key == pygame.K_LEFT:
+                move_left = True
+            elif event.key == pygame.K_RIGHT:
+                move_right = True
+            elif event.key == pygame.K_UP:
+                jumping = True
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                move_left = False
+            elif event.key == pygame.K_RIGHT:
+                move_right = False
+              
+    # player movements — Samuel
+    if jumping:
+      player_y -= y_velocity
+      y_velocity -= y_gravity
+      if y_velocity < -jump_height:
+        jumping = False
+        y_velocity = jump_height
+      screen.blit(mario, (player_x, player_y, 50, 50)) 
+
+    if move_left:
+          player_x -= speed
+          shift_world += 3
+    if move_right:
+          player_x += speed
+          shift_world -= 3
+
+    if player_x < 0 + shift_world:
+      player_x = 0 + shift_world
+
+    if shift_world > 0:
+      shift_world = 0
+      
+    if event.type == pygame.MOUSEBUTTONDOWN:
+        mouse_x, mouse_y = event.pos
+        print(mouse_x, mouse_y)
+    
+    # get rectangles — Samuel and Angela
+    mario_rect = pygame.Rect(player_x, player_y, mario.get_width(), mario.get_height())
+    platform_rect = pygame.Rect(140 + shift_world, 200, platform.get_width(), platform.get_height())
+    ground_rect = pygame.Rect(0 + shift_world, 326, ground.get_width(), ground.get_height())
+    mushroom_rect = pygame.Rect(mushroom_x + shift_world, mushroom_y, mushroom.get_width(), mushroom.get_height())
+    mystery1_rect = pygame.Rect(51 + shift_world, 200, mystery_not_hit.get_width(), mystery_not_hit.get_height())
+    mystery2_rect = pygame.Rect(141 + shift_world, 100, mystery_not_hit.get_width(), mystery_not_hit.get_height())
+    mystery3_rect = pygame.Rect(300 + shift_world, 100, mystery_not_hit.get_width(), mystery_not_hit.get_height())
+    mystery4_rect = pygame.Rect(222 + shift_world, 200, mystery_not_hit.get_width(), mystery_not_hit.get_height())  
+    coin1_rect = pygame.Rect(59 + shift_world, 177, coin1.get_width(), coin1.get_height())
+    coin2_rect = pygame.Rect(140 + shift_world, 74, coin2.get_width(), coin2.get_width())
+    coin3_rect = pygame.Rect(228 + shift_world, 170, coin3.get_width(), coin3.get_height())
+    goomba_rect = pygame.Rect(goomba_x + shift_world, goomba_y, goomba.get_width(), goomba.get_height())
+    flagpole_rect = pygame.Rect(800 + shift_world, 280, flagpole.get_width(), flagpole.get_height())
+
+    # player coordinates — Samuel
+    mystery4_rect.x = 222 + shift_world
+    mario_rect.x = player_x
+    mario_rect.y = player_y
+
+    # DRAWING
+    screen.fill(("#b2edf5"))  # always the first drawing command
+
+    # background clouds — Angela
+    for j in range(20):
+        screen.blit(clouds[j], (j * 150 + shift_world, y_positions[j], 50, 50))
+
+      
+
+    # ground and platforms — Angela
+    screen.blit(ground, (0 + shift_world , 326, 640, 50))
+    screen.blit(ground, (640 + shift_world, 326, 640, 50))
+    screen.blit(platform, (140 + shift_world, 200, 640, 50))
+
+    # mushroom appears if player hits top right mystery box — Samuel
+    if mario_rect.colliderect(mystery3_rect):
+      mushroom_activated = True
+    if mushroom_activated:
+        if mario_rect.colliderect(mushroom_rect):
+          collide_mushroom = True
+          mushroom_sound.play()
+          mario_small = pygame.image.load("mario.png")
+          mario_big = pygame.transform.scale(mario_small, (mario_small.get_width()*1.5, mario_small.get_height()*1.5))
+          mario = mario_big
+          mario_grow = True
+          
+    # mushroom movement — Angela
+        if collide_mushroom == False:
+            mushroom_x -= 1
+            if mushroom_rect.colliderect(mystery3_rect):
+                mushroom_y = 80
+            elif mushroom_rect.colliderect(platform_rect):
+                mushroom_y = 170
+            elif mushroom_rect.colliderect(ground_rect):
+                mushroom_y = 303
+            else:
+                mushroom_y += 4
+            screen.blit(mushroom, (mushroom_x + shift_world, mushroom_y, 640, 50))
+
+        screen.blit(mystery_hit, (300 + shift_world, 103, 50, 50))
+
+    else:
+        screen.blit(mystery_not_hit, (300 + shift_world, 103, 640, 50))
+
+    
+    # goomba — Angela
+    goomba_x -= 1
+    if mario_rect.colliderect(goomba_rect):
+      if collide_mushroom == True:
+        goomba_killed = True
+        goomba_sound.play()
+      else:
+        player_killed = True
+        print(f"You lost! Score = {score}.")
+    if goomba_killed == False:
+      screen.blit(goomba, (goomba_x + shift_world, goomba_y, 640, 50))
+    if player_killed == True:
+      break
+    
+    # collide with mystery boxes
+    # activating coins - Angela
+    if mario_rect.colliderect(mystery1_rect):
+      coin1_activated = True
+    if mario_rect.colliderect(mystery2_rect):
+      coin2_activated = True
+    if mario_rect.colliderect(mystery4_rect):
+      coin3_activated = True
+
+    # showing coins if player has not collected coins — Samuel
+    if coin1_activated:
+        if mario_rect.colliderect(coin1_rect):
+          collide_coin1 = True
+          score += 1
+        if collide_coin1 == False:
+          screen.blit(coin1, (51 + shift_world, 176, 38, 38))
+         
+        screen.blit(mystery_hit, (51 + shift_world, 202, 38, 38))
+        coin_sound.play()
+
+    else:
+        screen.blit(mystery_not_hit, (51 + shift_world, 202, 38, 38))
+
+    if coin2_activated:
+        if mario_rect.colliderect(coin2_rect):
+          collide_coin2 = True
+          score += 1
+        if collide_coin2 == False:
+          screen.blit(coin2, (140 + shift_world, 74, 38, 38))
+         
+        screen.blit(mystery_hit, (140 + shift_world, 100, 640, 50))
+        coin_sound.play()
+
+    else:
+        screen.blit(mystery_not_hit, (140 + shift_world, 100, 640, 50))
+ 
+    if coin3_activated:
+        if mario_rect.colliderect(coin3_rect):
+          collide_coin3 = True
+          score += 1
+        if collide_coin3 == False:
+          screen.blit(coin3, (228 + shift_world, 170, 38, 38))
+          
+        screen.blit(mystery_hit, (222 + shift_world, 203, 50, 50))
+        coin_sound.play()
+
+    else:
+        screen.blit(mystery_not_hit, (222 + shift_world, 203, 50, 50))
+
+    # adding speed — Samuel
+    if score == 0:
+      speed = 2
+    elif score == 1:
+      speed = 2.5
+    elif score == 2:
+      speed = 3
+    else:
+      speed = 4
+
+    # ending game if character reaches flagpole — Angela
+    screen.blit(flagpole, (800 + shift_world, 280, 50, 50))
+    if mario_rect.colliderect(flagpole_rect):
+      win_sound.play()
+      print(f"You won! Your score is {score}.")
+      break
+    
+    # Draw player - Samuel
+    if mario_grow == True:
+      screen.blit(mario, (player_x, player_y - 28, 50, 50))
+    else:
+      screen.blit(mario, (player_x, player_y, 50, 50))
+
+    # Must be the last two lines
+    # of the game loop
+    pygame.display.flip()
+    clock.tick(30)
+    #---------------------------
+
+pygame.quit()
